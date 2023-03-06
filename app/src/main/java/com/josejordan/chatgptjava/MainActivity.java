@@ -10,8 +10,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -61,20 +63,20 @@ public class MainActivity extends AppCompatActivity {
                 postFields.put("temperature", TEMPERATURE);
 
                 connection.setDoOutput(true);
-                connection.getOutputStream().write(postFields.toString().getBytes(StandardCharsets.UTF_8));
+                try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8))) {
+                    writer.write(postFields.toString());
+                }
 
                 int responseCode = connection.getResponseCode();
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String inputLine;
-                StringBuilder response = new StringBuilder();
-
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder response = new StringBuilder();
+                    String inputLine;
+                    while ((inputLine = reader.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    JSONObject jsonResponse = new JSONObject(response.toString());
+                    result = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
                 }
-                in.close();
-
-                JSONObject jsonResponse = new JSONObject(response.toString());
-                result = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
 
             } catch (IOException | JSONException e) {
                 Log.e(TAG, "Error: " + e.getMessage());
