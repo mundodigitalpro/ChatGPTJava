@@ -1,10 +1,9 @@
 package com.josejordan.chatgptjava;
 
-import android.os.AsyncTask;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.util.Log;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,6 +17,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,17 +36,9 @@ public class MainActivity extends AppCompatActivity {
 
         String query = "What is the capital city of England?";
 
-        OpenAIChatBotTask task = new OpenAIChatBotTask();
-        task.execute(query);
-    }
-
-    private static class OpenAIChatBotTask extends AsyncTask<String, Void, String> {
-
-        @Override
-        protected String doInBackground(String... queries) {
-            String query = queries[0];
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(() -> {
             String result = "";
-
             try {
                 URL url = new URL("https://api.openai.com/v1/chat/completions");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -87,12 +81,16 @@ public class MainActivity extends AppCompatActivity {
             }
 
             return result;
-        }
+        });
 
-        @Override
-        protected void onPostExecute(String response) {
-            // Aquí puedes procesar la respuesta del bot de chat
-            Log.i(TAG, "Chatbot response: " + response);
-        }
+        executor.execute(() -> {
+            try {
+                String response = future.get();
+                // Aquí puedes procesar la respuesta del bot de chat
+                Log.i(TAG, "Chatbot response: " + response);
+            } catch (Exception e) {
+                Log.e(TAG, "Error: " + e.getMessage());
+            }
+        });
     }
 }
