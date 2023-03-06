@@ -1,15 +1,17 @@
 package com.josejordan.chatgptjava;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.os.Bundle;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.util.Log;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -38,15 +40,17 @@ public class MainActivity extends AppCompatActivity {
 
     private static class OpenAIChatBotTask extends AsyncTask<String, Void, String> {
 
+        @Override
         protected String doInBackground(String... queries) {
             String query = queries[0];
             String result = "";
+
             try {
                 URL url = new URL("https://api.openai.com/v1/chat/completions");
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setRequestMethod("POST");
-                con.setRequestProperty("Content-Type", "application/json");
-                con.setRequestProperty("Authorization", "Bearer " + API_KEY);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("Authorization", "Bearer " + API_KEY);
 
                 JSONObject postFields = new JSONObject();
                 postFields.put("model", MODEL_NAME);
@@ -62,11 +66,11 @@ public class MainActivity extends AppCompatActivity {
                 postFields.put("max_tokens", MAX_TOKENS);
                 postFields.put("temperature", TEMPERATURE);
 
-                con.setDoOutput(true);
-                con.getOutputStream().write(postFields.toString().getBytes(StandardCharsets.UTF_8));
+                connection.setDoOutput(true);
+                connection.getOutputStream().write(postFields.toString().getBytes(StandardCharsets.UTF_8));
 
-                int responseCode = con.getResponseCode();
-                BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                int responseCode = connection.getResponseCode();
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 String inputLine;
                 StringBuilder response = new StringBuilder();
 
@@ -78,12 +82,14 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject jsonResponse = new JSONObject(response.toString());
                 result = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
 
-            } catch (Exception e) {
+            } catch (IOException | JSONException e) {
                 Log.e(TAG, "Error: " + e.getMessage());
             }
+
             return result;
         }
 
+        @Override
         protected void onPostExecute(String response) {
             // Aquí puedes procesar la respuesta del bot de chat
             Log.i(TAG, "Chatbot response: " + response);
