@@ -1,5 +1,6 @@
 package com.josejordan.chatgptjava;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.EditText;
@@ -30,7 +31,9 @@ public class MainActivity extends AppCompatActivity {
                 client.sendRequest(query, response -> {
                     // Aquí puedes procesar la respuesta del bot de chat
                     Log.i(TAG, "Chatbot response: " + response);
+                    tvText.setTextColor(Color.WHITE);
                     tvText.setText(response);
+                    etText.setText("");
                 });
             }
         });
