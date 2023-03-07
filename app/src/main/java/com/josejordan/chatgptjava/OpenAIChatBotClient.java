@@ -77,8 +77,9 @@ public class OpenAIChatBotClient {
 
                     //JSONObject jsonResponse = new JSONObject(responseHttp.body().string());
                     //response = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
-
-                    JsonObject jsonResponse = new JsonParser().parse(responseHttp.body().string()).getAsJsonObject();
+                    //JsonObject jsonResponse = new JsonParser().parse(responseHttp.body().string()).getAsJsonObject();
+                    assert responseHttp.body() != null;
+                    JsonObject jsonResponse = JsonParser.parseString(responseHttp.body().string()).getAsJsonObject();
                     response = jsonResponse.getAsJsonArray("choices").get(0).getAsJsonObject().getAsJsonObject("message").get("content").getAsString();
 
                 } catch (IOException e) {
