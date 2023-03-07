@@ -1,5 +1,5 @@
 package com.josejordan.chatgptjava;
-
+/*
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -79,4 +79,86 @@ public class OpenAIChatBotClient {
         });
     }
 
+}*/
+
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+public class OpenAIChatBotClient {
+
+    private static final String TAG = OpenAIChatBotClient.class.getSimpleName();
+    private static final String BASE_URL = "https://api.openai.com/v1/";
+    private static final String API_KEY = "API_KEY";
+    private static final String MODEL_NAME = "gpt-3.5-turbo";
+    private static final int MAX_TOKENS = 12;
+    private static final int TEMPERATURE = 0;
+    private OpenAIApi openAIApi;
+
+    private final Executor executor = Executors.newSingleThreadExecutor();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
+    public OpenAIChatBotClient() {
+        OkHttpClient.Builder okHttpClient = new OkHttpClient.Builder();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(okHttpClient.build())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        openAIApi = retrofit.create(OpenAIApi.class);
+    }
+
+    public void sendRequest(String query, OnResponseListener listener) {
+        JsonObject postFields = new JsonObject();
+        postFields.addProperty("model", MODEL_NAME);
+
+        JsonArray messagesArr = new JsonArray();
+        JsonObject messageObj = new JsonObject();
+        messageObj.addProperty("role", "user");
+        messageObj.addProperty("content", query);
+        messagesArr.add(messageObj);
+
+        postFields.add("messages", messagesArr);
+        postFields.addProperty("max_tokens", MAX_TOKENS);
+        postFields.addProperty("temperature", TEMPERATURE);
+
+        Call<JsonObject> call = openAIApi.sendRequest("Bearer " + API_KEY, postFields);
+
+        call.enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful()) {
+                    JsonObject jsonResponse = response.body();
+                    String text = jsonResponse.getAsJsonArray("choices")
+                            .get(0).getAsJsonObject()
+                            .getAsJsonObject("message")
+                            .get("content")
+                            .getAsString();
+                    handler.post(() -> listener.onResponse(text));
+                } else {
+                    Log.e(TAG, "Error response: " + response.code() + " " + response.message());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                Log.e(TAG, "Error: " + t.getMessage(), t);
+            }
+        });
+    }
 }
+
