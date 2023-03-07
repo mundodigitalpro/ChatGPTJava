@@ -62,7 +62,9 @@ public class OpenAIChatBotClient {
                 postFields.addProperty("temperature", TEMPERATURE);
 
 
-                RequestBody requestBody = RequestBody.create(JSON, postFields.toString());
+                //RequestBody requestBody = RequestBody.create(JSON, postFields.toString());
+                RequestBody requestBody = RequestBody.create(postFields.toString(), JSON);
+
                 Request request = new Request.Builder()
                         .url("https://api.openai.com/v1/chat/completions")
                         .addHeader("Authorization", "Bearer " + API_KEY)
