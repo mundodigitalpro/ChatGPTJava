@@ -15,6 +15,8 @@ import androidx.annotation.NonNull;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -33,6 +35,10 @@ public class OpenAIChatBotClient {
 
     public OpenAIChatBotClient() {
         OkHttpClient.Builder okHttpClient = new OkHttpClient.Builder();
+        okHttpClient.connectTimeout(30, TimeUnit.SECONDS); // 30 segundos de tiempo de espera para establecer la conexión
+        okHttpClient.readTimeout(30, TimeUnit.SECONDS); // 30 segundos de tiempo de espera para recibir datos
+
+
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(okHttpClient.build())
