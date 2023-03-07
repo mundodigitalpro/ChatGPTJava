@@ -85,11 +85,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -106,9 +105,7 @@ public class OpenAIChatBotClient {
     private static final String MODEL_NAME = "gpt-3.5-turbo";
     private static final int MAX_TOKENS = 12;
     private static final int TEMPERATURE = 0;
-    private OpenAIApi openAIApi;
-
-    private final Executor executor = Executors.newSingleThreadExecutor();
+    private final OpenAIApi openAIApi;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     public OpenAIChatBotClient() {
@@ -140,22 +137,25 @@ public class OpenAIChatBotClient {
 
         call.enqueue(new Callback<JsonObject>() {
             @Override
-            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+            public void onResponse(@NonNull Call<JsonObject> call, @NonNull Response<JsonObject> response) {
                 if (response.isSuccessful()) {
                     JsonObject jsonResponse = response.body();
+
+                    assert jsonResponse != null;
                     String text = jsonResponse.getAsJsonArray("choices")
                             .get(0).getAsJsonObject()
                             .getAsJsonObject("message")
                             .get("content")
                             .getAsString();
                     handler.post(() -> listener.onResponse(text));
+
                 } else {
                     Log.e(TAG, "Error response: " + response.code() + " " + response.message());
                 }
             }
 
             @Override
-            public void onFailure(Call<JsonObject> call, Throwable t) {
+            public void onFailure(@NonNull Call<JsonObject> call, @NonNull Throwable t) {
                 Log.e(TAG, "Error: " + t.getMessage(), t);
             }
         });
