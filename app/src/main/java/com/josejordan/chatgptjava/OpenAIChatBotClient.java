@@ -4,13 +4,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -19,6 +17,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
 
 public class OpenAIChatBotClient {
 
@@ -38,19 +37,30 @@ public class OpenAIChatBotClient {
         executor.execute(() -> {
             String response = "";
             try {
-                JSONObject postFields = new JSONObject();
-                postFields.put("model", MODEL_NAME);
+                //JSONObject postFields = new JSONObject();
+                //postFields.put("model", MODEL_NAME);
+                JsonObject postFields = new JsonObject();
+                postFields.addProperty("model", MODEL_NAME);
 
-                List<JSONObject> messagesList = new ArrayList<>();
-                JSONObject messageObj = new JSONObject();
-                messageObj.put("role", "user");
-                messageObj.put("content", query);
-                messagesList.add(messageObj);
+//                List<JSONObject> messagesList = new ArrayList<>();
+//                JSONObject messageObj = new JSONObject();
+//                messageObj.put("role", "user");
+//                messageObj.put("content", query);
+//                messagesList.add(messageObj);
+                JsonArray messagesArr = new JsonArray();
+                JsonObject messageObj = new JsonObject();
+                messageObj.addProperty("role", "user");
+                messageObj.addProperty("content", query);
+                messagesArr.add(messageObj);
 
-                JSONArray messagesArr = new JSONArray(messagesList);
-                postFields.put("messages", messagesArr);
-                postFields.put("max_tokens", MAX_TOKENS);
-                postFields.put("temperature", TEMPERATURE);
+//                JSONArray messagesArr = new JSONArray(messagesList);
+//                postFields.put("messages", messagesArr);
+//                postFields.put("max_tokens", MAX_TOKENS);
+//                postFields.put("temperature", TEMPERATURE);
+                postFields.add("messages", messagesArr);
+                postFields.addProperty("max_tokens", MAX_TOKENS);
+                postFields.addProperty("temperature", TEMPERATURE);
+
 
                 RequestBody requestBody = RequestBody.create(JSON, postFields.toString());
                 Request request = new Request.Builder()
@@ -59,19 +69,28 @@ public class OpenAIChatBotClient {
                         .post(requestBody)
                         .build();
 
+
                 try (Response responseHttp = client.newCall(request).execute()) {
                     if (!responseHttp.isSuccessful()) {
                         throw new IOException("Unexpected response code: " + responseHttp);
                     }
-                    JSONObject jsonResponse = new JSONObject(responseHttp.body().string());
-                    response = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
-                } catch (IOException | JSONException e) {
+
+                    //JSONObject jsonResponse = new JSONObject(responseHttp.body().string());
+                    //response = jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+
+                    JsonObject jsonResponse = new JsonParser().parse(responseHttp.body().string()).getAsJsonObject();
+                    response = jsonResponse.getAsJsonArray("choices").get(0).getAsJsonObject().getAsJsonObject("message").get("content").getAsString();
+
+                } catch (IOException e) {
                     Log.e(TAG, "Error parsing JSON response", e);
                 }
-            } catch (JSONException e) {
+
+
+            } catch (Exception e) {
                 Log.e(TAG, "Error creating JSON object", e);
             }
 
+            //handler.post(() -> listener.onResponse(finalResponse));
             String finalResponse = response;
             handler.post(() -> listener.onResponse(finalResponse));
         });
